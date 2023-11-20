@@ -1,0 +1,33 @@
+@startuml Architecture
+skinparam sequenceArrowThickness 2
+frame databases {
+    database "CommunityDB"
+    database "PostDB0"
+    database "PostDB1"
+    database "PostDBN"
+}
+CommunityDB -[dashed]- PostDB0
+CommunityDB -[dashed]- PostDB1
+CommunityDB -[dashed]- PostDBN
+PostDBN ~ PostDB1 
+
+component WebServer as "Web server"
+component LemmyFetcher as "Lemmy fetcher"
+component CommunityWorker as "Community worker"
+component DatabaseService as "Database service"
+
+DatabaseService --> databases
+
+WebServer --> DatabaseService
+CommunityWorker --> CommunityDB : Exponential backoff
+LemmyFetcher --> PostDB0
+LemmyFetcher --> PostDB1
+LemmyFetcher --> PostDBN
+
+queue Messageq
+CommunityWorker --> Messageq
+Messageq --> LemmyFetcher : Queue-trigger
+
+boundary Lemmy
+LemmyFetcher --> Lemmy
+@enduml
