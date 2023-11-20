@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  CWebServer:
+    image: cwebserver
+    ports:
+      - 8000:8000
+    volumes:
+      - ./CWebServer:/app
+    environment:
+      - CWEB_SECRET_KEY=123
+      - CWEB_DATABASE_SERVICE_URI=cdatabaseservice
+      - PYTHONUNBUFFERED=1
+  CWorker:
+    image: cworker
+    volumes:
+      - ./CWorker:/app
+    environment:
+      - CWORKER_DATABASE_HOST=communitydb
+      - CWORKER_DATABASE_NAME=CommunityDB
+      - CWORKER_REFRESH_RATE=60
+      - CWORKER_MESSAGE_QUEUE_HOST=host.docker.internal
+      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_uu-p5jG3K4szBmhvDoO
+      - CWORKER_MESSAGE_QUEUE_PASSWORD=FD_2nbdJyE96q_rZuh0twNCaf5LmcEwE
+      - CWORKER_MESSAGE_QUEUE_QUEUE=update-community
+      - PYTHONUNBUFFERED=1
+  communitydb:
+    image: mongo
+    command: --quiet --syslog
+    expose:
+      - "27017"
+    volumes:
+      - community-db-data:/data/db
+      - mongo-config:/data/configdb
+  cdatabaseservice:
+    image: cdatabaseservice:latest
+    environment:
+      - CDatabaseService__CommunityDB__ConnectionString=communitydb
+      - CDatabaseService__CommunityDB__DatabaseName=CommunityDB
+      - CDatabaseService__CommunityDB__CommunitiesCollectionName=communities
+volumes:
+  community-db-data:
+  mongo-config:
