@@ -19,7 +19,7 @@ namespace CDatabaseService
                 communityServiceDatabaseSettings.DatabaseName);
 
             _communitiesCollection = mongoDatabase.GetCollection<Community>(
-                communityServiceDatabaseSettings.CommunitiesCollectionName);
+                communityServiceDatabaseSettings.CollectionName);
         }
 
         public async Task<List<Community>> GetAsync() =>
