@@ -29,5 +29,5 @@ def get_posts(communityId):
     )
     print(resp.request.method)
     print(resp.request.url)
-    print(resp.request.body, flush=True)  
+    print(resp.request.body, flush=True)
     return resp.json()

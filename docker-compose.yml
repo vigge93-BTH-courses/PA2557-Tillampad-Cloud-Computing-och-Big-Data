@@ -19,10 +19,24 @@ services:
       - CWORKER_DATABASE_NAME=CommunityDB
       - CWORKER_REFRESH_RATE=60
       - CWORKER_MESSAGE_QUEUE_HOST=host.docker.internal
-      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_uu-p5jG3K4szBmhvDoO
-      - CWORKER_MESSAGE_QUEUE_PASSWORD=FD_2nbdJyE96q_rZuh0twNCaf5LmcEwE
+      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_50iW6i4epZrg_LLbD_S
+      - CWORKER_MESSAGE_QUEUE_PASSWORD=l6lyclosyEkvK2Z8dlJyWn3bR_WmeB6d
       - CWORKER_MESSAGE_QUEUE_QUEUE=update-community
+      - CWORKER_BATCH_SIZE=2
+      - CWORKER_LOG_LEVEL=DEBUG
       - PYTHONUNBUFFERED=1
+  CFetcher:
+    image: cfetcher
+    volumes:
+      - ./CFetcher:/app
+    environment:
+      - CFETCHER_DATABASE_HOST=postdb
+      - CFETCHER_DATABASE_NAME=PostDB
+      - CFETCHER_MESSAGE_QUEUE_HOST=host.docker.internal
+      - CFETCHER_MESSAGE_QUEUE_USERNAME=default_user_50iW6i4epZrg_LLbD_S
+      - CFETCHER_MESSAGE_QUEUE_PASSWORD=l6lyclosyEkvK2Z8dlJyWn3bR_WmeB6d
+      - CFETCHER_MESSAGE_QUEUE_QUEUE=update-community
+      - CFETCHER_LOG_LEVEL=DEBUG
   communitydb:
     image: mongo
     command: --quiet --syslog
@@ -30,13 +44,26 @@ services:
       - "27017"
     volumes:
       - community-db-data:/data/db
-      - mongo-config:/data/configdb
+      - mongo-config-community-db:/data/configdb
+  postdb:
+    image: mongo
+    command: --quiet --syslog
+    expose:
+      - "27017"
+    volumes:
+      - post-db-data:/data/db
+      - mongo-config-post-db:/data/confidb
   cdatabaseservice:
     image: cdatabaseservice:latest
     environment:
       - CDatabaseService__CommunityDB__ConnectionString=communitydb
       - CDatabaseService__CommunityDB__DatabaseName=CommunityDB
-      - CDatabaseService__CommunityDB__CommunitiesCollectionName=communities
+      - CDatabaseService__CommunityDB__CollectionName=communities
+      - CDatabaseService__PostDB__ConnectionString=postdb
+      - CDatabaseService__PostDB__DatabaseName=PostDB
+      - CDatabaseService__PostDB__CollectionName=posts
 volumes:
   community-db-data:
-  mongo-config:
+  post-db-data:
+  mongo-config-community-db:
+  mongo-config-post-db:

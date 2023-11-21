@@ -1,6 +1,6 @@
-# kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
+kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 kubectl apply -f assignment1-rabbitmq.yml
-sleep 30 # TODO: Remove
+sleep 60 # TODO: Remove
 rabbitmq_username="$(kubectl get secret c-message-q-default-user -o jsonpath='{.data.username}' | base64 --decode)"
 rabbitmq_password="$(kubectl get secret c-message-q-default-user -o jsonpath='{.data.password}' | base64 --decode)"
 rabbitmq_service="$(kubectl get service c-message-q -o jsonpath='{.spec.clusterIP}')"
