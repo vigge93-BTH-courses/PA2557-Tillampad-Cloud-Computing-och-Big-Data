@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{%block navbar %}
+    <a class="navbar-text btn btn-primary p-2" style="color: white;" href="{{ url_for('web.add') }}">Add community</a>
+{% endblock %}
+
+{% block body %}
+    <h1>{% block title %}Communities{% endblock %}</h1>
+    <div class="list-group">
+        {% for community in communities %}
+            {% if community.communityId %}
+                <a href="{{url_for('web.post', communityId=community.communityId)}}" class="list-group-item list-group-item-action">
+                 {{ render_community(community) }}
+                </a>
+            {% else %}
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% macro render_community(community) -%}
+<div class="d-flex w-100">
+    {%if community.icon %}
+        <img class="m-2 img-thumbnail img-fluid w-25" src="{{community.icon}}" />
+    {% endif %}
+    <div class="d-flex flex-column flex-grow-1 m-2">
+        <div class="flex-grow-1 community-row" style="background-image: url('{{ community.banner }}');"></div>
+        <div class="d-flex justify-content-between">
+            <h5 class="my-2">{{community.title or community.name}}</h5>
+            <small>{{community.instanceUrl}}</small>
+        </div>
+        <div class="m-2">
+            {{ community.description }}
+        </div>
+    </div>
+</div>
+{%- endmacro %}

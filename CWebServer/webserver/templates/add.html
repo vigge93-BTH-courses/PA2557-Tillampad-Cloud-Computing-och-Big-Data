@@ -1,3 +1,7 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<h1>{% block title %}Add community{% endblock %}</h1>
 <form method="POST">
   <label for="instance_url">Instance url</label>
   <input name="instance_url" id="instance_url" />
@@ -5,3 +9,4 @@
   <input name="community_name" id="community_name" />
   <button type="submit">Add</button>
 </form>
+{% endblock %}

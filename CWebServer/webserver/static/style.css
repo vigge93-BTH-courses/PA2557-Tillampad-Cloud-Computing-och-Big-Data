@@ -1,0 +1,17 @@
+.content {
+  margin: 2em;
+}
+
+.flash,
+.flash > a {
+  margin: 1em 0;
+  padding: 1em;
+  background: red;
+  border: 1px solid #b6171c;
+  color: white;
+}
+
+.community-row {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
