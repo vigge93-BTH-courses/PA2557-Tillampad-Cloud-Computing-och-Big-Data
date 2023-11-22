@@ -5,14 +5,14 @@ import logging
 
 def get_communities():
     resp = requests.get(
-        f'http://{current_app.config["DATABASE_HANDLER_URI"]}/communities'
+        f'http://{current_app.config["DATABASE_SERVICE_HOST"]}/communities'
     )
     return resp.json()
 
 
 def post_communities(communities):
     resp = requests.post(
-        f'http://{current_app.config["DATABASE_HANDLER_URI"]}/communities',
+        f'http://{current_app.config["DATABASE_SERVICE_HOST"]}/communities',
         json=communities,
     )
     if resp.status_code != 200:
@@ -24,7 +24,7 @@ def post_communities(communities):
 
 def get_posts(communityId):
     resp = requests.get(
-        f'http://{current_app.config["DATABASE_HANDLER_URI"]}/posts',
+        f'http://{current_app.config["DATABASE_SERVICE_HOST"]}/posts',
         params={"communityId": communityId},
     )
     print(resp.request.method)

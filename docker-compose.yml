@@ -8,7 +8,7 @@ services:
       - ./CWebServer:/app
     environment:
       - CWEB_SECRET_KEY=123
-      - CWEB_DATABASE_SERVICE_URI=cdatabaseservice
+      - CDATABASESERVICE_SERVICE_HOST=cdatabaseservice
       - PYTHONUNBUFFERED=1
   CWorker:
     image: cworker
@@ -19,8 +19,8 @@ services:
       - CWORKER_DATABASE_NAME=CommunityDB
       - CWORKER_REFRESH_RATE=60
       - CWORKER_MESSAGE_QUEUE_HOST=host.docker.internal
-      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_50iW6i4epZrg_LLbD_S
-      - CWORKER_MESSAGE_QUEUE_PASSWORD=l6lyclosyEkvK2Z8dlJyWn3bR_WmeB6d
+      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_6-iQEnfJt6RZdHLvbDU
+      - CWORKER_MESSAGE_QUEUE_PASSWORD=r-Tyr9yKfd8v0ZZMD62C2JlfOhn0_HY2
       - CWORKER_MESSAGE_QUEUE_QUEUE=update-community
       - CWORKER_BATCH_SIZE=2
       - CWORKER_LOG_LEVEL=DEBUG
@@ -30,11 +30,13 @@ services:
     volumes:
       - ./CFetcher:/app
     environment:
-      - CFETCHER_DATABASE_HOST=postdb
-      - CFETCHER_DATABASE_NAME=PostDB
+      - CFETCHER_POSTS_DATABASE_HOST=postdb
+      - CFETCHER_POSTS_DATABASE_NAME=PostDB
+      - CFETCHER_COMMUNITY_DATABASE_HOST=communitydb
+      - CFETCHER_COMMUNITY_DATABASE_NAME=CommunityDB
       - CFETCHER_MESSAGE_QUEUE_HOST=host.docker.internal
-      - CFETCHER_MESSAGE_QUEUE_USERNAME=default_user_50iW6i4epZrg_LLbD_S
-      - CFETCHER_MESSAGE_QUEUE_PASSWORD=l6lyclosyEkvK2Z8dlJyWn3bR_WmeB6d
+      - CFETCHER_MESSAGE_QUEUE_USERNAME=default_user_6-iQEnfJt6RZdHLvbDU
+      - CFETCHER_MESSAGE_QUEUE_PASSWORD=r-Tyr9yKfd8v0ZZMD62C2JlfOhn0_HY2
       - CFETCHER_MESSAGE_QUEUE_QUEUE=update-community
       - CFETCHER_LOG_LEVEL=DEBUG
   communitydb:

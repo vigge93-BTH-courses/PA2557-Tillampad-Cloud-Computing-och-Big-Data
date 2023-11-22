@@ -8,7 +8,7 @@ def create_app() -> Flask:
 
     app.config.from_mapping(
         SECRET_KEY=os.getenv("CWEB_SECRET_KEY"),
-        DATABASE_HANDLER_URI=os.getenv("CWEB_DATABASE_SERVICE_URI"),
+        DATABASE_SERVICE_HOST=os.getenv("CDATABASESERVICE_SERVICE_HOST"),
     )
     print(app.config)
 

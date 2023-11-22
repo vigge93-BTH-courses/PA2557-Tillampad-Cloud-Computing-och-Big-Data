@@ -1,0 +1,405 @@
+#------------------------------------------------------------------------------#
+#|                                  Configuration                             |#
+#------------------------------------------------------------------------------#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lemmy-app-config
+  labels:
+    data: config
+data:
+  communitydb_uri: "communitydb-service"
+  communitydb_name: "CommunityDB"
+  communitydb_collection: "communities"
+  postdb_uri: "postdb-service"
+  postdb_name: "PostDB"
+  postdb_collection: "posts"
+  worker_refresh_rate: "60"
+  worker_batch_size: "2"
+  log_level: "DEBUG"
+  queue_name: update-community
+  queue_host: "c-message-q"
+---
+#------------------------------------------------------------------------------#
+#|                                  CWebServer                                |#
+#------------------------------------------------------------------------------#
+apiVersion: v1
+kind: Service
+metadata:
+  name: cwebserver
+spec:
+  type: LoadBalancer
+  selector:
+    app: cwebserver
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cwebserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cwebserver
+  template:
+    metadata:
+      labels:
+        app: cwebserver
+    spec:
+      containers:
+      - name: cwebserver
+        image: viar19/pa2577-a1:cwebserver
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CWEB_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cwebserver-secret-key
+              key: secret-key
+---
+#------------------------------------------------------------------------------#
+#|                            CDatabaseService                                |#
+#------------------------------------------------------------------------------#
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdatabaseservice
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: cdatabaseservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdatabaseservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cdatabaseservice
+  template:
+    metadata:
+      labels:
+        app: cdatabaseservice
+    spec:
+      containers:
+      - name: cdatabaseservice
+        image: viar19/pa2577-a1:cdatabaseservice
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CDatabaseService__CommunityDB__ConnectionString
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_uri
+        - name: CDatabaseService__CommunityDB__DatabaseName
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_name
+        - name: CDatabaseService__CommunityDB__CollectionName
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_collection
+        - name: CDatabaseService__PostDB__ConnectionString
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_uri
+        - name: CDatabaseService__PostDB__DatabaseName
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_name
+        - name: CDatabaseService__PostDB__CollectionName
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_collection
+---
+#------------------------------------------------------------------------------#
+#|                                   CWorker                                  |#
+#------------------------------------------------------------------------------#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cworker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cworker
+  template:
+    metadata:
+      labels:
+        app: cworker
+    spec:
+      containers:
+      - name: cworker
+        image: viar19/pa2577-a1:cworker
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        env:
+        - name: CWORKER_MESSAGE_QUEUE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: c-message-q-default-user
+              key: username
+        - name: CWORKER_MESSAGE_QUEUE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: c-message-q-default-user
+              key: password
+        - name: CWORKER_MESSAGE_QUEUE_QUEUE
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: queue_name
+        - name: CWORKER_MESSAGE_QUEUE_HOST
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: queue_host
+        - name: CWORKER_DATABASE_HOST
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_uri
+        - name: CWORKER_DATABASE_NAME
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_name
+        - name: CWORKER_REFRESH_RATE
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: worker_refresh_rate
+        - name: CWORKER_BATCH_SIZE
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: worker_batch_size
+        - name: CWORKER_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: log_level
+---
+#------------------------------------------------------------------------------#
+#|                                  CFetcher                                  |#
+#------------------------------------------------------------------------------#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cfetcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cfetcher
+  template:
+    metadata:
+      labels:
+        app: cfetcher
+    spec:
+      containers:
+      - name: cfetcher
+        image: viar19/pa2577-a1:cfetcher
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        env:
+        - name: CFETCHER_MESSAGE_QUEUE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: c-message-q-default-user
+              key: username
+        - name: CFETCHER_MESSAGE_QUEUE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: c-message-q-default-user
+              key: password
+        - name: CFETCHER_MESSAGE_QUEUE_QUEUE
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: queue_name
+        - name: CFETCHER_MESSAGE_QUEUE_HOST
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: queue_host
+        - name: CFETCHER_POSTS_DATABASE_HOST
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_uri
+        - name: CFETCHER_POSTS_DATABASE_NAME
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_name
+        - name: CFETCHER_COMMUNITY_DATABASE_HOST
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_uri
+        - name: CFETCHER_COMMUNITY_DATABASE_NAME
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_name
+        - name: CFETCHER_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: log_level
+---
+#------------------------------------------------------------------------------#
+#|                               CommunityDB                                  |#
+#------------------------------------------------------------------------------#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: communitydb-service
+  labels:
+    app: communitydb
+spec:
+  ports:
+  - port: 27017
+    targetPort: mongodb-port
+  selector:
+    app: communitydb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: communitydb
+  labels:
+    app: communitydb
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: communitydb
+  template:
+    metadata:
+      labels:
+        app: communitydb
+    spec:
+      containers:
+      - name: communitydb
+        image: mongo
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 27017
+          name: mongodb-port
+        volumeMounts:
+        - name: communitydb-data
+          mountPath: /data/db
+        - name: mongo-config
+          mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: communitydb-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mongo-config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Mi
+#------------------------------------------------------------------------------#
+#|                                  PostDB                                    |#
+#------------------------------------------------------------------------------#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postdb-service
+  labels:
+    app: postdb
+spec:
+  ports:
+  - port: 27017
+    targetPort: mongodb-port
+  selector:
+    app: postdb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postdb
+  labels:
+    app: postdb
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postdb
+  template:
+    metadata:
+      labels:
+        app: postdb
+    spec:
+      containers:
+      - name: postdb
+        image: mongo
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 27017
+          name: mongodb-port
+        volumeMounts:
+        - name: postdb-data
+          mountPath: /data/db
+        - name: mongo-config
+          mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: postdb-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mongo-config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Mi
