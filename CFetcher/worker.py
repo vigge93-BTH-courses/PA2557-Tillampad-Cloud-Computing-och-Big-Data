@@ -52,7 +52,13 @@ def setup_logging(loglevel: str):
     return logger
 
 
-def update_community(db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str, instance_url: str, logger: Logger):
+def update_community(
+    db: Database,
+    lemmy_client: plemmy.LemmyHttp,
+    community_name: str,
+    instance_url: str,
+    logger: Logger,
+):
     community_resp = lemmy_client.get_community(name=community_name)
     if community_resp is None or community_resp.status_code != 200:
         logger.warning("Unable to handle message")
@@ -60,21 +66,32 @@ def update_community(db: Database, lemmy_client: plemmy.LemmyHttp, community_nam
 
     community: dict = community_resp.json()["community_view"]["community"]
     collection = db["communities"]
-    collection.update_one({"instance_url": instance_url, 'name': community_name}, {'$set': {
-        "community_id": community.get('id', -1),
-        "title": community.get('title', None),
-        "description": community.get('description', None),
-        "removed": community.get("removed", False),
-        "nsfw": community.get("nsfw", True),
-        "icon": community.get("icon", None),
-        "banner": community.get("banner", None)
-    }})
-    
+    collection.update_one(
+        {"instance_url": instance_url, "name": community_name},
+        {
+            "$set": {
+                "community_id": community.get("id", -1),
+                "title": community.get("title", None),
+                "description": community.get("description", None),
+                "removed": community.get("removed", False),
+                "nsfw": community.get("nsfw", True),
+                "icon": community.get("icon", None),
+                "banner": community.get("banner", None),
+            }
+        },
+    )
+
     logger.info("Community updated...")
-    
+
     return True
-def get_posts(db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str, logger: Logger):
-    posts_resp = lemmy_client.get_posts(community_name=community_name, sort="New", limit=20)
+
+
+def get_posts(
+    db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str, logger: Logger
+):
+    posts_resp = lemmy_client.get_posts(
+        community_name=community_name, sort="New", limit=20
+    )
     if posts_resp is None or posts_resp.status_code != 200:
         logger.warning("Unable to handle message")
         return False
@@ -88,6 +105,7 @@ def get_posts(db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str,
     logger.info(f"Updated {len(posts)} posts...")
     return True
 
+
 def handle_message_failed(method, channel: BlockingChannel):
     if method.redelivered:
         channel.basic_nack(
@@ -97,6 +115,7 @@ def handle_message_failed(method, channel: BlockingChannel):
         channel.basic_nack(
             delivery_tag=method.delivery_tag, multiple=False, requeue=True
         )
+
 
 def handle_queue_message(
     channel: BlockingChannel,
@@ -110,20 +129,23 @@ def handle_queue_message(
     body = json_util.loads(body)
     logger.info("Got 1 message from queue...")
     logger.debug(f'updating {body["instance_url"]}, {body["name"]}')
-    
+
     client = plemmy.LemmyHttp(body["instance_url"])
-    
-    success = update_community(community_db, client, body['name'], body['instance_url'], logger)
+
+    success = update_community(
+        community_db, client, body["name"], body["instance_url"], logger
+    )
     if not success:
         handle_message_failed(method, channel)
         return
-    
-    success = get_posts(posts_db, client, body['name'], logger)
+
+    success = get_posts(posts_db, client, body["name"], logger)
     if not success:
         handle_message_failed(method, channel)
         return
 
     channel.basic_ack(delivery_tag=method.delivery_tag)
+
 
 def stop_worker(tag, channel: BlockingChannel, logger: Logger):
     logger.debug("Stopping worker...")
@@ -154,11 +176,15 @@ def worker() -> None:
         config["CFETCHER_POSTS_DATABASE_HOST"], config["CFETCHER_POSTS_DATABASE_NAME"]
     )
     community_db = get_database(
-        config["CFETCHER_COMMUNITY_DATABASE_HOST"], config["CFETCHER_COMMUNITY_DATABASE_NAME"]
+        config["CFETCHER_COMMUNITY_DATABASE_HOST"],
+        config["CFETCHER_COMMUNITY_DATABASE_NAME"],
     )
 
     queue_message_callback = functools.partial(
-        handle_queue_message, posts_db=posts_db, community_db=community_db, logger=logger
+        handle_queue_message,
+        posts_db=posts_db,
+        community_db=community_db,
+        logger=logger,
     )
     consumer_tag = channel.basic_consume(queuename, queue_message_callback)
 

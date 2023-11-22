@@ -12,8 +12,10 @@ def index():
     for community in communities:
         if community["description"]:
             html = markdown(community["description"])
-            community["description"] = BeautifulSoup(html, features='html.parser').get_text()
-    return render_template('index.html', communities=communities)
+            community["description"] = BeautifulSoup(
+                html, features="html.parser"
+            ).get_text()
+    return render_template("index.html", communities=communities)
 
 
 @bp.route("/add", methods=["GET", "POST"])
