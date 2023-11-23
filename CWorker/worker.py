@@ -5,7 +5,7 @@ from threading import Event
 import datetime as dt
 import logging
 import sys
-from bson import json_util
+import functools
 
 from pymongo import MongoClient
 
@@ -69,6 +69,10 @@ def setup_logging(loglevel):
     logger.addHandler(handler)
     return logger
 
+def exit_worker(event: Event, logger: logging.Logger):
+    logger.info("Stopping worker...")
+    event.set()
+
 
 def worker():
     config = load_config()
@@ -92,7 +96,9 @@ def worker():
     db = get_database(config["CWORKER_DATABASE_HOST"], config["CWORKER_DATABASE_NAME"])
     event = Event()
     backoff = ExponentialBackoff(sleeper=event)
-    killer = GracefulKiller(event)
+    
+    killer_callback = functools.partial(exit_worker, event=event, logger=logger)
+    killer = GracefulKiller(killer_callback)
 
     collection = db["communities"]
     while not killer.kill_now:
@@ -118,7 +124,7 @@ def worker():
                 backoff.clear()
                 for object in objectsToUpdate:
                     channel.basic_publish(
-                        exchange="", routing_key=queuename, body=json_util.dumps(object)
+                        exchange="", routing_key=queuename, body=str(object["_id"])
                     )
                     collection.update_one(
                         {"_id": object["_id"]},
@@ -136,7 +142,7 @@ def worker():
             backoff.sleep(backoff.maxTime)
     queue_connection.close()
     db.client.close()
-
+    logger.info("Worker exited succesfully!")
 
 if __name__ == "__main__":
     worker()

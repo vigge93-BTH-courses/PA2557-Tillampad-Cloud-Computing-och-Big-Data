@@ -1,5 +1,6 @@
 import signal
 from threading import Event
+from typing import Callable
 
 
 class GracefulKiller:
@@ -7,11 +8,11 @@ class GracefulKiller:
 
     kill_now = False
 
-    def __init__(self, event: Event):
-        self.event = event
+    def __init__(self, callback: Callable):
+        self.callback = callback
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, *args):
         self.kill_now = True
-        self.event.set()
+        self.callback()
