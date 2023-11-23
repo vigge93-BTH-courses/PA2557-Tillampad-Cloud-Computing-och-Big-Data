@@ -59,7 +59,7 @@ kind: Deployment
 metadata:
   name: cwebserver
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: cwebserver
@@ -72,6 +72,9 @@ spec:
       - name: cwebserver
         image: viar19/pa2577-a1:cwebserver
         resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
           limits:
             memory: "128Mi"
             cpu: "500m"
@@ -102,7 +105,7 @@ kind: Deployment
 metadata:
   name: cdatabaseservice
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: cdatabaseservice
@@ -115,6 +118,9 @@ spec:
       - name: cdatabaseservice
         image: viar19/pa2577-a1:cdatabaseservice
         resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
           limits:
             memory: "128Mi"
             cpu: "500m"
@@ -160,7 +166,7 @@ kind: Deployment
 metadata:
   name: cworker
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: cworker
@@ -173,6 +179,9 @@ spec:
       - name: cworker
         image: viar19/pa2577-a1:cworker
         resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
           limits:
             memory: "128Mi"
             cpu: "500m"
@@ -231,7 +240,7 @@ kind: Deployment
 metadata:
   name: cfetcher
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: cfetcher
@@ -244,6 +253,9 @@ spec:
       - name: cfetcher
         image: viar19/pa2577-a1:cfetcher
         resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
           limits:
             memory: "128Mi"
             cpu: "500m"
@@ -297,7 +309,6 @@ spec:
 #------------------------------------------------------------------------------#
 #|                               CommunityDB                                  |#
 #------------------------------------------------------------------------------#
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -332,8 +343,11 @@ spec:
       - name: communitydb
         image: mongo
         resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
           limits:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "500m"
         ports:
         - containerPort: 27017
@@ -396,8 +410,11 @@ spec:
       - name: postdb
         image: mongo
         resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
           limits:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "500m"
         ports:
         - containerPort: 27017
