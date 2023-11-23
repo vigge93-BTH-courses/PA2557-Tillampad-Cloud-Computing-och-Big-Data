@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 
 {% block body %}
-<h1>{% block title %}Add community{% endblock %}</h1>
-<form method="POST">
-  <label for="instance_url">Instance url</label>
-  <input name="instance_url" id="instance_url" />
-  <label for="community_name">Community name</label>
-  <input name="community_name" id="community_name" />
-  <button type="submit">Add</button>
-</form>
+  <h1>{% block title %}Add community{% endblock %}</h1>
+  <form method="post">
+    <div class="form-group m-2">
+      <label for="instance_url">Instance url</label><br>
+      <input name="instance_url" pattern="https?:\/\/.*[^/]$"/>
+    </div>
+    <div class="form-group m-2">
+      <label for="community_name">Community name</label><br>
+      <input name="community_name"/>
+    </div>
+    <button class="btn btn-primary" type="submit">Add</button>
+  </form>
 {% endblock %}

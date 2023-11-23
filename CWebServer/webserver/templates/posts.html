@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    <h1>{% block title %}Posts{% endblock %}</h1>
+    <div class="list-group">
+        {% for post in posts %}
+          <div class="list-group-item list-group-item-action">
+              {{ render_post(post) }}
+          </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% macro render_post(post) -%}
+<div class="d-flex w-100">
+    {%if post.thumbnailUrl %}
+        <img class="m-2 img-thumbnail img-fluid w-25 h-100" src="{{post.thumbnailUrl}}" />
+    {% endif %}
+    <div class="d-flex flex-column flex-grow-1 m-2">
+        <div class="d-flex my-2">
+            {% if post.url %}
+              <a class="flex-shrink-1" href="{{post.url}}"><h5>{{post.name}}</h5></a>
+            {% else %}
+              <h5 class="flex-shrink-1">{{post.name}}</h5>
+            {% endif %}
+            <div class="d-flex ms-auto">
+              <div class="d-flex align-items-center m-2"><i class="fas fa-arrow-up"></i>&nbsp;{{ post.counts.upvotes }}</div>
+              <div class="d-flex align-items-center m-2"><i class="fas fa-arrow-down"></i>&nbsp;{{ post.counts.downvotes }}</div>
+              <div class="d-flex align-items-center m-2"><i class="fas fa-comment"></i>&nbsp;{{ post.counts.comments }}</div>
+            </div>
+            <p class="m-2 align-self-center" style="text-wrap: nowrap; ">{{post.published}}</p>
+        </div>
+        <div class="m-2">
+            {{ post.body or post.embedDescription or '' }}
+        </div>
+    </div>
+</div>
+{%- endmacro %}
