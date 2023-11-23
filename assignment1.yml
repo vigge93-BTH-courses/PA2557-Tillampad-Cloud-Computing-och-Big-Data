@@ -21,6 +21,25 @@ data:
   queue_host: "c-message-q"
 ---
 #------------------------------------------------------------------------------#
+# |                                 RabbitMQ                                  |#
+#------------------------------------------------------------------------------#
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+    name: c-message-q
+    labels:
+      app: c-message-q
+spec:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+---
+#------------------------------------------------------------------------------#
 #|                                  CWebServer                                |#
 #------------------------------------------------------------------------------#
 apiVersion: v1
