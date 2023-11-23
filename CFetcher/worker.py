@@ -9,7 +9,7 @@ import plemmy
 
 from pymongo import MongoClient
 
-from bson import json_util
+from bson.objectid import ObjectId
 from pymongo.database import Database
 from gracefull_killer import GracefulKiller
 
@@ -51,23 +51,33 @@ def setup_logging(loglevel: str):
     logger.addHandler(handler)
     return logger
 
+def get_community(db: Database, id: bytes, logger: Logger) -> dict | None:
+    collection = db["communities"]
+    community = collection.find_one({"_id": ObjectId(id.decode())})
+    logger.debug(f'Community: {community}')
+    if not community:
+        logger.debug("No community found")
+        return None
+    return community
+
 
 def update_community(
     db: Database,
     lemmy_client: plemmy.LemmyHttp,
     community_name: str,
-    instance_url: str,
+    id: ObjectId,
     logger: Logger,
 ):
+    logger.debug(community_name)
     community_resp = lemmy_client.get_community(name=community_name)
     if community_resp is None or community_resp.status_code != 200:
-        logger.warning("Unable to handle message")
+        logger.warning(f"update_community: Unable to handle message: {community_resp.status_code}, {community_resp.text}")
         return False
 
     community: dict = community_resp.json()["community_view"]["community"]
     collection = db["communities"]
     collection.update_one(
-        {"instance_url": instance_url, "name": community_name},
+        {"_id": id},
         {
             "$set": {
                 "community_id": community.get("id", -1),
@@ -87,20 +97,20 @@ def update_community(
 
 
 def get_posts(
-    db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str, logger: Logger
+    db: Database, lemmy_client: plemmy.LemmyHttp, community_name: str, instance_url: str, logger: Logger
 ):
     posts_resp = lemmy_client.get_posts(
         community_name=community_name, sort="New", limit=20
     )
     if posts_resp is None or posts_resp.status_code != 200:
-        logger.warning("Unable to handle message")
+        logger.warning(f"get_posts: Unable to handle message: {posts_resp.status_code}, {posts_resp.text}")
         return False
     posts = posts_resp.json()["posts"]
     collection = db["posts"]
     for post in posts:
         post_data = post["post"]
         del post["post"]
-        post = post | post_data
+        post = post | post_data | {"instance_url": instance_url}
         collection.update_one({"post_id": post["id"]}, {"$set": post}, upsert=True)
     logger.info(f"Updated {len(posts)} posts...")
     return True
@@ -121,25 +131,32 @@ def handle_queue_message(
     channel: BlockingChannel,
     method,
     properties: pika.BasicProperties,
-    body,
+    id: bytes,
     posts_db: Database,
     community_db: Database,
     logger: Logger,
 ):
-    body = json_util.loads(body)
     logger.info("Got 1 message from queue...")
-    logger.debug(f'updating {body["instance_url"]}, {body["name"]}')
+    logger.debug(f'updating community {id}...')
 
-    client = plemmy.LemmyHttp(body["instance_url"])
+    community = get_community(community_db, id, logger)
+    if not community:
+        logger.warning(f'Community not found: {id}.')
+        handle_message_failed(method, channel)
+        return
+
+    logger.debug(f'updating {community["instance_url"]}, {community["name"]}')
+
+    client = plemmy.LemmyHttp(community["instance_url"])
 
     success = update_community(
-        community_db, client, body["name"], body["instance_url"], logger
+        community_db, client, community["name"], community["_id"], logger
     )
     if not success:
         handle_message_failed(method, channel)
         return
 
-    success = get_posts(posts_db, client, body["name"], logger)
+    success = get_posts(posts_db, client, community["name"], community["instance_url"], logger)
     if not success:
         handle_message_failed(method, channel)
         return

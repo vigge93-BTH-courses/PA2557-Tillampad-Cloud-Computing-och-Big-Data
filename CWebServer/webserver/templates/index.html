@@ -9,7 +9,7 @@
     <div class="list-group">
         {% for community in communities %}
             {% if community.communityId %}
-                <a href="{{url_for('web.post', communityId=community.communityId)}}" class="list-group-item list-group-item-action">
+                <a href="{{url_for('web.posts', communityObjId=community.id)}}" class="list-group-item list-group-item-action">
                  {{ render_community(community) }}
                 </a>
             {% else %}
@@ -35,7 +35,7 @@
         <div class="d-flex my-2 justify-content-between">
             <h5>{{community.title or community.name}}</h5>
             <small>{{community.instanceUrl}}</small>
-            <form action="#" method="post">
+            <form action="{{ url_for('web.delete_community', id=community.id) }}" method="post">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>

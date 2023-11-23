@@ -11,6 +11,8 @@ namespace CDatabaseService
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
+        [BsonElement("instance_url")]
+        public string? InstanceUrl { get; set; }
         [BsonElement("community_id")]
         public long? CommunityId { get; set; }
         [BsonElement("post_id")]

@@ -35,6 +35,6 @@ namespace CDatabaseService
             await _communitiesCollection.ReplaceOneAsync(x => x.Id == id, updatedCommunity);
 
         public async Task RemoveAsync(string id) =>
-            await _communitiesCollection.DeleteOneAsync(x => x.Id == id);
+            await _communitiesCollection.DeleteOneAsync(x => x.Id== id);
     }
 }

@@ -33,9 +33,14 @@ def add():
         return redirect(url_for("web.index"))
     return render_template("add.html")
 
-@bp.route("/<int:communityId>/posts")
-def post(communityId: int):
-    posts = db.get_posts(communityId)
+@bp.route("/<string:id>/delete", methods=['POST'])
+def delete_community(id: str):
+    db.delete_community(id)
+    return redirect(url_for('web.index'))
+
+@bp.route("/<string:communityObjId>/posts")
+def posts(communityObjId: str):
+    posts = db.get_posts(communityObjId)
     for post in posts:
         published = datetime.datetime.fromisoformat(post["published"])
         post["published"] = published.astimezone().strftime("%Y-%m-%d %H:%M")
@@ -45,9 +50,9 @@ def post(communityId: int):
             post["embedDescription"] = md_to_text(post["embedDescription"].replace('::', '\n'))
     return render_template('posts.html', posts=posts)
 
-@bp.route("/<int:communityId>/posts/json")
-def post_json(communityId: int):
-    return db.get_posts(communityId)
+@bp.route("/<string:communityObjId>/posts/json")
+def post_json(communityObjId: str):
+    return db.get_posts(communityObjId)
 
 def md_to_text(text):
     html = markdown(text)

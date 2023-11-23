@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Runtime.CompilerServices;
 
 namespace CDatabaseService.Controllers
 {
@@ -26,6 +27,18 @@ namespace CDatabaseService.Controllers
         {
             await _communityService.CreateAsync(community);
             return new OkResult();
+        }
+
+        [HttpDelete(Name = "DeleteCommunities")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var community = await _communityService.GetAsync(id);
+            if (community == null)
+            {
+                new NotFoundResult();
+            }
+            await _communityService.RemoveAsync(id);
+            return new OkObjectResult(community);
         }
     }
 }

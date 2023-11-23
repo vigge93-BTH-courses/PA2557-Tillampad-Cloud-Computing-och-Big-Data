@@ -25,8 +25,8 @@ namespace CDatabaseService
         public async Task<List<Post>> GetAsync() =>
             await _postsCollection.Find(_ => true).ToListAsync();
 
-        public async Task<List<Post>> GetAsync(long communityId) =>
-            await _postsCollection.Find(x => x.CommunityId == communityId).ToListAsync();
+        public async Task<List<Post>> GetAsync(long communityId, string instanceUrl) =>
+            await _postsCollection.Find(x => x.CommunityId == communityId && x.InstanceUrl == instanceUrl).ToListAsync();
 
         public async Task CreateAsync(Post newCommunity) =>
             await _postsCollection.InsertOneAsync(newCommunity);
@@ -34,7 +34,7 @@ namespace CDatabaseService
         public async Task UpdateAsync(string id, Post updatedCommunity) =>
             await _postsCollection.ReplaceOneAsync(x => x.Id == id, updatedCommunity);
 
-        public async Task RemoveAsync(string id) =>
-            await _postsCollection.DeleteOneAsync(x => x.Id == id);
+        public async Task RemoveAsync(long communityId, string instanceUrl) =>
+            await _postsCollection.DeleteManyAsync(x => x.CommunityId == communityId && x.InstanceUrl == instanceUrl);
     }
 }
