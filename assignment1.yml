@@ -16,7 +16,7 @@ data:
   postdb_collection: "posts"
   worker_refresh_rate: "60"
   worker_batch_size: "2"
-  log_level: "DEBUG"
+  log_level: "INFO"
   queue_name: update-community
   queue_host: "c-message-q"
 ---
@@ -71,6 +71,18 @@ spec:
       containers:
       - name: cwebserver
         image: viar19/pa2577-a1:cwebserver
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 3
         resources:
           requests:
             cpu: 100m
@@ -216,6 +228,11 @@ spec:
             configMapKeyRef: 
               name: lemmy-app-config
               key: communitydb_name
+        - name: CFETCHER_DATABASE_COLLECTION
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_collection
         - name: CWORKER_REFRESH_RATE
           valueFrom:
             configMapKeyRef: 
@@ -290,6 +307,11 @@ spec:
             configMapKeyRef: 
               name: lemmy-app-config
               key: postdb_name
+        - name: CFETCHER_POSTS_DATABASE_COLLECTION
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: postdb_collection
         - name: CFETCHER_COMMUNITY_DATABASE_HOST
           valueFrom:
             configMapKeyRef: 
@@ -300,6 +322,11 @@ spec:
             configMapKeyRef: 
               name: lemmy-app-config
               key: communitydb_name
+        - name: CFETCHER_COMMUNITY_DATABASE_COLLECTION
+          valueFrom:
+            configMapKeyRef: 
+              name: lemmy-app-config
+              key: communitydb_collection
         - name: CFETCHER_LOG_LEVEL
           valueFrom:
             configMapKeyRef: 

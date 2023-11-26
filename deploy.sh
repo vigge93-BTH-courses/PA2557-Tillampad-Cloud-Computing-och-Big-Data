@@ -7,3 +7,4 @@ kubectl delete secret cwebserver-secret-key --ignore-not-found
 kubectl create secret generic cwebserver-secret-key --from-literal=secret-key='123'
 
 kubectl apply -f assignment1.yml
+kubectl rollout status deployment cwebserver
