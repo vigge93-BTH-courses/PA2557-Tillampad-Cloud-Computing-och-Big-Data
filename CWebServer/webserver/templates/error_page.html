@@ -1,0 +1,49 @@
+<head>
+    <title>Error - Lemmy fetcher</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='error_style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <style type=text/css>
+        body {
+            background: var(--light-grey);
+        }
+        h1, h2, p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 10em;
+        }
+
+        h2 {
+            font-size: 3em;
+        }
+
+        p {
+            font-size: 1.5em;
+        }
+        .content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            width: min-content;
+        }
+        a {
+            background-color: var(--main-color);
+            color: var(--light-grey) !important;
+            padding: 0.5em;
+            border-radius: 0.5em;
+        }
+
+        a:hover {
+            background-color: var(--hover-color);
+        }
+
+            
+    </style>    
+</head>
+<div class="content">
+    <h1>{{ e.code }}</h1>
+    <h2>{{ e.name }}</h2>
+    <p>{{ e.description }}<br><br><a href="/">Return to main page</a></p>
+</div>

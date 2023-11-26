@@ -1,15 +1,14 @@
+import datetime as dt
+import functools
+import logging
 import os
-import pika
+import sys
 from dataclasses import dataclass
 from threading import Event
-import datetime as dt
-import logging
-import sys
-import functools
 
-from pymongo import MongoClient
-
+import pika
 from gracefull_killer import GracefulKiller
+from pymongo import MongoClient
 
 
 @dataclass
@@ -35,6 +34,7 @@ class ExponentialBackoff:
 def load_config() -> dict[str, str]:
     dbservice = os.getenv("CWORKER_DATABASE_HOST")
     dbname = os.getenv("CWORKER_DATABASE_NAME")
+    dbcollection = os.getenv("CWORKER_DATABASE_COLLECTION")
     refreshRate = os.getenv("CWORKER_REFRESH_RATE")
     queue_host = os.getenv("CWORKER_MESSAGE_QUEUE_HOST")
     queue_username = os.getenv("CWORKER_MESSAGE_QUEUE_USERNAME")
@@ -43,17 +43,48 @@ def load_config() -> dict[str, str]:
     batch_size = os.getenv("CWORKER_BATCH_SIZE")
     log_level = os.getenv("CWORKER_LOG_LEVEL")
 
+    if not dbservice:
+        logging.warning("CWORKER_DATABASE_HOST not provided")
+    if not dbname:
+        logging.warning("CWORKER_DATABASE_NAME not provided")
+    if not dbcollection:
+        logging.warning("CWORKER_DATABASE_COLLECTION not provided")
+    if not queue_host:
+        logging.warning("CWORKER_MESSAGE_QUEUE_HOST not provided")
+    if not queue_username:
+        logging.warning("CWORKER_MESSAGE_QUEUE_USERNAME not provided")
+    if not queue_password:
+        logging.warning("CWORKER_MESSAGE_QUEUE_PASSWORD not provided")
+    if not queue_queues:
+        logging.warning("CWORKER_MESSAGE_QUEUE_QUEUE not provided")
+    if not log_level:
+        logging.warning("CWORKER_LOG_LEVEL not provided")
+
+    if not all(
+        [
+            dbname,
+            dbservice,
+            dbcollection,
+            queue_host,
+            queue_username,
+            queue_password,
+            queue_queues,
+        ]
+    ):
+        exit()
+
     return {
-        "CWORKER_DATABASE_HOST": dbservice or "",
-        "CWORKER_DATABASE_NAME": dbname or "CommunityMainDB",
-        "CWORKER_REFRESH_RATE": refreshRate or "300",
-        "CWORKER_MESSAGE_QUEUE_HOST": queue_host or "localhost",
-        "CWORKER_MESSAGE_QUEUE_USERNAME": queue_username or "",
-        "CWORKER_MESSAGE_QUEUE_PASSWORD": queue_password or "",
-        "CWORKER_MESSAGE_QUEUE_QUEUE": queue_queues or "update-community",
-        "CWORKER_BATCH_SIZE": batch_size or "50",
-        "CWORKER_LOG_LEVEL": log_level or "WARNING",
-    }
+        "DATABASE_HOST": dbservice,
+        "DATABASE_NAME": dbname,
+        "DATABASE_COLLECTION": dbcollection,
+        "REFRESH_RATE": refreshRate or "300",
+        "MESSAGE_QUEUE_HOST": queue_host,
+        "MESSAGE_QUEUE_USERNAME": queue_username,
+        "MESSAGE_QUEUE_PASSWORD": queue_password,
+        "MESSAGE_QUEUE_QUEUE": queue_queues,
+        "BATCH_SIZE": batch_size or "50",
+        "LOG_LEVEL": log_level or "WARNING",
+    }  # type: ignore , python does not recognise the not all() check as not allowing any None values.
 
 
 def get_database(connection_string: str, database_name: str):
@@ -69,6 +100,7 @@ def setup_logging(loglevel):
     logger.addHandler(handler)
     return logger
 
+
 def exit_worker(event: Event, logger: logging.Logger):
     logger.info("Stopping worker...")
     event.set()
@@ -77,30 +109,32 @@ def exit_worker(event: Event, logger: logging.Logger):
 def worker():
     config = load_config()
 
-    logger = setup_logging(config["CWORKER_LOG_LEVEL"])
-    logger.debug(config)
+    logger = setup_logging(config["LOG_LEVEL"])
+    logger.info("Setting up worker...")
 
     connection_params = pika.ConnectionParameters(
-        config["CWORKER_MESSAGE_QUEUE_HOST"],
+        config["MESSAGE_QUEUE_HOST"],
         credentials=pika.PlainCredentials(
-            config["CWORKER_MESSAGE_QUEUE_USERNAME"],
-            config["CWORKER_MESSAGE_QUEUE_PASSWORD"],
+            config["MESSAGE_QUEUE_USERNAME"],
+            config["MESSAGE_QUEUE_PASSWORD"],
         ),
     )
     queue_connection = pika.BlockingConnection(connection_params)
     channel = queue_connection.channel()
 
-    queuename = config["CWORKER_MESSAGE_QUEUE_QUEUE"]
+    queuename = config["MESSAGE_QUEUE_QUEUE"]
     channel.queue_declare(queuename)
 
-    db = get_database(config["CWORKER_DATABASE_HOST"], config["CWORKER_DATABASE_NAME"])
+    db = get_database(config["DATABASE_HOST"], config["DATABASE_NAME"])
     event = Event()
     backoff = ExponentialBackoff(sleeper=event)
-    
+
     killer_callback = functools.partial(exit_worker, event=event, logger=logger)
     killer = GracefulKiller(killer_callback)
 
-    collection = db["communities"]
+    collection = db[config["DATABASE_COLLECTION"]]
+
+    logger.info("Worker setup finished, starting worker...")
     while not killer.kill_now:
         try:
             objectsToUpdate = list(
@@ -111,14 +145,14 @@ def worker():
                                 "last_update": {
                                     "$lt": dt.datetime.now(dt.UTC)
                                     - dt.timedelta(
-                                        seconds=float(config["CWORKER_REFRESH_RATE"])
+                                        seconds=float(config["REFRESH_RATE"])
                                     )
                                 }
                             },
                             {"last_update": None},
                         ]
                     }
-                ).limit(int(config["CWORKER_BATCH_SIZE"]))
+                ).limit(int(config["BATCH_SIZE"]))
             )
             if len(objectsToUpdate) > 0:
                 backoff.clear()
@@ -130,7 +164,7 @@ def worker():
                         {"_id": object["_id"]},
                         {"$set": {"last_update": dt.datetime.now(dt.UTC)}},
                     )
-                logger.info(f"Added {len(objectsToUpdate)} objects to the queue...")
+                logger.info(f"Added {len(objectsToUpdate)} objects to the queue.")
             else:
                 logger.info(
                     f"Nothing to do, sleeping for {backoff.currentTime} seconds..."
@@ -139,10 +173,12 @@ def worker():
                 backoff.increase()
         except Exception as ex:
             logger.error(f"Error: {ex}")
+            logger.info(f"Sleeping for {backoff.maxTime} seconds...")
             backoff.sleep(backoff.maxTime)
     queue_connection.close()
     db.client.close()
     logger.info("Worker exited succesfully!")
+
 
 if __name__ == "__main__":
     worker()

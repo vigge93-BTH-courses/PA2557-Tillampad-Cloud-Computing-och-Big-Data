@@ -1,6 +1,7 @@
 import os
 
-from flask import Flask
+from flask import Flask, redirect, render_template, url_for
+from werkzeug.exceptions import HTTPException
 
 
 def create_app() -> Flask:
@@ -10,14 +11,27 @@ def create_app() -> Flask:
         SECRET_KEY=os.getenv("CWEB_SECRET_KEY"),
         DATABASE_SERVICE_HOST=os.getenv("CDATABASESERVICE_SERVICE_HOST"),
     )
-    print(app.config)
 
-    from . import web
+    from . import communities
 
-    app.register_blueprint(web.bp)
+    app.register_blueprint(communities.bp)
 
-    @app.route("/heartbeat")
-    def heartbeat() -> dict[str, int]:
+    from . import posts
+
+    app.register_blueprint(posts.bp)
+
+    app.register_error_handler(HTTPException, error_page)
+
+    @app.route("/healthz")
+    def healthz() -> dict[str, int]:
         return {"status": 1}
 
+    @app.route("/")
+    def index():
+        return redirect(url_for("communities.index"))
+
     return app
+
+
+def error_page(e):
+    return render_template("error_page.html", e=e), e.code

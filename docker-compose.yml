@@ -17,13 +17,14 @@ services:
     environment:
       - CWORKER_DATABASE_HOST=communitydb
       - CWORKER_DATABASE_NAME=CommunityDB
+      - CWORKER_DATABASE_COLLECTION=communities
       - CWORKER_REFRESH_RATE=60
       - CWORKER_MESSAGE_QUEUE_HOST=host.docker.internal
-      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_6-iQEnfJt6RZdHLvbDU
-      - CWORKER_MESSAGE_QUEUE_PASSWORD=r-Tyr9yKfd8v0ZZMD62C2JlfOhn0_HY2
+      - CWORKER_MESSAGE_QUEUE_USERNAME=default_user_4-AbUC8QH6X9ij6dCBO
+      - CWORKER_MESSAGE_QUEUE_PASSWORD=Z2SBpg5QhaqyuorfalNroGLOJG_KeB0L
       - CWORKER_MESSAGE_QUEUE_QUEUE=update-community
       - CWORKER_BATCH_SIZE=2
-      - CWORKER_LOG_LEVEL=DEBUG
+      - CWORKER_LOG_LEVEL=INFO
       - PYTHONUNBUFFERED=1
   CFetcher:
     image: cfetcher
@@ -32,13 +33,15 @@ services:
     environment:
       - CFETCHER_POSTS_DATABASE_HOST=postdb
       - CFETCHER_POSTS_DATABASE_NAME=PostDB
+      - CFETCHER_POSTS_DATABASE_COLLECTION=posts
       - CFETCHER_COMMUNITY_DATABASE_HOST=communitydb
       - CFETCHER_COMMUNITY_DATABASE_NAME=CommunityDB
+      - CFETCHER_COMMUNITY_DATABASE_COLLECTION=communities
       - CFETCHER_MESSAGE_QUEUE_HOST=host.docker.internal
-      - CFETCHER_MESSAGE_QUEUE_USERNAME=default_user_6-iQEnfJt6RZdHLvbDU
-      - CFETCHER_MESSAGE_QUEUE_PASSWORD=r-Tyr9yKfd8v0ZZMD62C2JlfOhn0_HY2
+      - CFETCHER_MESSAGE_QUEUE_USERNAME=default_user_4-AbUC8QH6X9ij6dCBO
+      - CFETCHER_MESSAGE_QUEUE_PASSWORD=Z2SBpg5QhaqyuorfalNroGLOJG_KeB0L
       - CFETCHER_MESSAGE_QUEUE_QUEUE=update-community
-      - CFETCHER_LOG_LEVEL=DEBUG
+      - CFETCHER_LOG_LEVEL=INFO
   communitydb:
     image: mongo
     command: --quiet --syslog
