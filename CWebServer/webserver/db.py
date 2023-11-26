@@ -13,7 +13,7 @@ def get_communities():
         logging.debug(resp.reason)
         logging.debug(resp.request.method, resp.request.headers, resp.request.body)
         logging.debug(resp.text)
-        return None
+        return []
     return resp.json()
 
 
@@ -40,7 +40,7 @@ def get_posts(community_obj_id: str):
         logging.debug(resp.reason)
         logging.debug(resp.request.method, resp.request.headers, resp.request.body)
         logging.debug(resp.text)
-        return None
+        return []
     return resp.json()
 
 

@@ -1,33 +1,34 @@
 @startuml Architecture
 skinparam sequenceArrowThickness 2
 frame databases {
-    database "CommunityDB" #green
-    database "PostDB0" #GreenYellow
-    database "PostDB1" #GreenYellow
-    database "PostDBN" #GreenYellow
+    database "CommunityDB"
+    database "PostDB0"
+    database "PostDB1" #PaleVioletRed
+    database "PostDBN" #PaleVioletRed
 }
-CommunityDB -[dashed]- PostDB0
-CommunityDB -[dashed]- PostDB1
-CommunityDB -[dashed]- PostDBN
-PostDBN ~ PostDB1 
 
-component WebServer as "Web server" #YellowGreen
-component LemmyFetcher as "Lemmy fetcher" #YellowGreen
-component CommunityWorker as "Community worker" #green
-component DatabaseService as "Database service" #green
+PostDBN ~ PostDB1
+PostDB1 -[hidden]> PostDB0 
+PostDB0 -[hidden]> CommunityDB 
 
-DatabaseService --> databases
+component WebServer as "Web server"
+component LemmyFetcher as "Fetcher"
+component CommunityWorker as "Worker"
+component DatabaseService as "Database service"
 
-WebServer --> DatabaseService
-CommunityWorker --> CommunityDB : Exponential backoff
-LemmyFetcher --> PostDB0
-LemmyFetcher --> PostDB1
-LemmyFetcher --> PostDBN
+DatabaseService --> databases: MongoDB\nWire Protocol
 
-queue Messageq #YellowGreen
-CommunityWorker --> Messageq
-Messageq --> LemmyFetcher : Queue-trigger
+WebServer --> DatabaseService: HTTP REST API
+CommunityWorker --> CommunityDB: MongoDB\nWire Protocol
+LemmyFetcher -[dashed]-> PostDBN
+LemmyFetcher -[dashed]-> PostDB1
+LemmyFetcher --> PostDB0: MongoDB\nWire Protocol
+LemmyFetcher --> CommunityDB: MongoDB\nWire Protocol
+
+queue Messageq as "Message queue"
+CommunityWorker --> Messageq: AMQP
+Messageq --> LemmyFetcher: AMQP
 
 boundary Lemmy
-LemmyFetcher --> Lemmy
+LemmyFetcher -up-> Lemmy: HTTP REST API
 @enduml
