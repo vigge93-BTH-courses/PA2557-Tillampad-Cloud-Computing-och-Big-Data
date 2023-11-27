@@ -87,13 +87,13 @@ spec:
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 3
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 50Mi
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 8000
         env:
@@ -133,13 +133,13 @@ spec:
       containers:
       - name: cdatabaseservice
         image: viar19/pa2577-a1:cdatabaseservice
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 50Mi
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 8000
         env:
@@ -194,13 +194,13 @@ spec:
       containers:
       - name: cworker
         image: viar19/pa2577-a1:cworker
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 50Mi
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
         env:
         - name: CWORKER_MESSAGE_QUEUE_USERNAME
           valueFrom:
@@ -273,13 +273,13 @@ spec:
       containers:
       - name: cfetcher
         image: viar19/pa2577-a1:cfetcher
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 50Mi
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
         env:
         - name: CFETCHER_MESSAGE_QUEUE_USERNAME
           valueFrom:
@@ -378,16 +378,16 @@ spec:
         readinessProbe:
           exec:
             command: ["mongosh", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 20
+          periodSeconds: 60
           timeoutSeconds: 10
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 27017
           name: mongodb-port
@@ -453,16 +453,16 @@ spec:
         readinessProbe:
           exec:
             command: ["mongosh", "--port", "27019", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 20
+          periodSeconds: 60
           timeoutSeconds: 10
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 27019
           name: mongodb-port
@@ -527,16 +527,16 @@ spec:
         readinessProbe:
           exec:
             command: ["mongosh", "--port", "27018", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 20
+          periodSeconds: 60
           timeoutSeconds: 10
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 27018
           name: mongodb-port
@@ -601,16 +601,16 @@ spec:
         readinessProbe:
           exec:
             command: ["mongosh", "--port", "27018", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+          initialDelaySeconds: 20
+          periodSeconds: 60
+          timeoutSeconds: 10
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 27018
           name: mongodb-port
@@ -676,16 +676,16 @@ spec:
         readinessProbe:
           exec:
             command: ["mongosh", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 20
+          periodSeconds: 60
           timeoutSeconds: 10
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
         ports:
         - containerPort: 27017
           name: mongodb-port
