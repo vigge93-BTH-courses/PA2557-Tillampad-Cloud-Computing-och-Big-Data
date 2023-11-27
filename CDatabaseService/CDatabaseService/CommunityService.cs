@@ -13,7 +13,7 @@ namespace CDatabaseService
         {
             var communityServiceDatabaseSettings = options.Get("CommunityDB");
             var mongoClient = new MongoClient(
-                $@"mongodb://{communityServiceDatabaseSettings.ConnectionString}");
+                $@"mongodb://{communityServiceDatabaseSettings.ConnectionString}/?directConnection=false");
 
             var mongoDatabase = mongoClient.GetDatabase(
                 communityServiceDatabaseSettings.DatabaseName);

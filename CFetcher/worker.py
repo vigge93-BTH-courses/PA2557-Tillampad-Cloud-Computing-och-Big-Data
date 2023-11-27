@@ -166,7 +166,7 @@ def get_posts(
         post_data = post["post"]
         del post["post"]
         post = post | post_data | {"instance_url": instance_url}
-        collection.update_one({"post_id": post["id"]}, {"$set": post}, upsert=True)
+        collection.update_one({"post_id": post["id"], "community_id": post["community_id"]}, {"$set": post}, upsert=True)
     logger.info(f"Updated {len(posts)} posts.")
     return True
 

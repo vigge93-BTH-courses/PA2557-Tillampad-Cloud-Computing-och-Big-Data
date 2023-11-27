@@ -11,7 +11,7 @@ data:
   communitydb_uri: "communitydb-service"
   communitydb_name: "CommunityDB"
   communitydb_collection: "communities"
-  postdb_uri: "postdb-service"
+  postdb_uri: "postdb-mongos-service"
   postdb_name: "PostDB"
   postdb_collection: "posts"
   worker_refresh_rate: "60"
@@ -46,6 +46,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cwebserver
+  labels:
+    app: cwebserver
 spec:
   type: LoadBalancer
   selector:
@@ -58,6 +60,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cwebserver
+  labels:
+    app: cwebserver
 spec:
   replicas: 3
   selector:
@@ -228,7 +232,7 @@ spec:
             configMapKeyRef: 
               name: lemmy-app-config
               key: communitydb_name
-        - name: CFETCHER_DATABASE_COLLECTION
+        - name: CWORKER_DATABASE_COLLECTION
           valueFrom:
             configMapKeyRef: 
               name: lemmy-app-config
@@ -356,8 +360,8 @@ metadata:
   labels:
     app: communitydb
 spec:
-  serviceName: mongodb
-  replicas: 1
+  serviceName: communitydb-service
+  replicas: 3
   selector:
     matchLabels:
       app: communitydb
@@ -365,10 +369,18 @@ spec:
     metadata:
       labels:
         app: communitydb
+        startup: communitydb-wait
     spec:
       containers:
       - name: communitydb
         image: mongo
+        command: ["mongod", "--bind_ip", "0.0.0.0", "--replSet", "CommunityRepSet"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 10
         resources:
           requests:
             cpu: 100m
@@ -400,42 +412,50 @@ spec:
           requests:
             storage: 5Mi
 #------------------------------------------------------------------------------#
-#|                                  PostDB                                    |#
+#|                              PostDB-Manager                                |#
 #------------------------------------------------------------------------------#
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: postdb-service
+  name: postdb-manager-service
   labels:
-    app: postdb
+    app: postdb-manager
 spec:
   ports:
-  - port: 27017
+  - port: 27019
     targetPort: mongodb-port
   selector:
-    app: postdb
+    app: postdb-manager
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postdb
+  name: postdb-manager
   labels:
-    app: postdb
+    app: postdb-manager
 spec:
-  serviceName: mongodb
-  replicas: 1
+  serviceName: postdb-manager-service
+  replicas: 3
   selector:
     matchLabels:
-      app: postdb
+      app: postdb-manager
   template:
     metadata:
       labels:
-        app: postdb
+        app: postdb-manager
+        startup: postdb-manager-wait
     spec:
       containers:
-      - name: postdb
+      - name: postdb-manager
         image: mongo
+        command: ["mongod", "--configsvr", "--replSet", "postManRepSet", "--bind_ip", "0.0.0.0"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--port", "27019", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 10
         resources:
           requests:
             cpu: 100m
@@ -444,16 +464,16 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         ports:
-        - containerPort: 27017
+        - containerPort: 27019
           name: mongodb-port
         volumeMounts:
-        - name: postdb-data
+        - name: postdb-manager-data
           mountPath: /data/db
         - name: mongo-config
           mountPath: /data/configdb
   volumeClaimTemplates:
     - metadata:
-        name: postdb-data
+        name: postdb-manager-data
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
@@ -466,3 +486,211 @@ spec:
         resources:
           requests:
             storage: 5Mi
+#------------------------------------------------------------------------------#
+#|                              PostDB-Shard 1                                |#
+#------------------------------------------------------------------------------#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postdb-shrd-1-service
+  labels:
+    app: postdb-shrd-1
+spec:
+  ports:
+  - port: 27018
+    targetPort: mongodb-port
+  selector:
+    app: postdb-shrd-1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postdb-shrd-1
+  labels:
+    app: postdb-shrd-1
+spec:
+  serviceName: postdb-shrd-1-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postdb-shrd-1
+  template:
+    metadata:
+      labels:
+        app: postdb-shrd-1
+    spec:
+      containers:
+      - name: postdb-shrd-1
+        image: mongo
+        command: ["mongod", "--shardsvr", "--bind_ip", "0.0.0.0", "--replSet", "postShrd1RepSet"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--port", "27018", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 27018
+          name: mongodb-port
+        volumeMounts:
+        - name: postdb-shrd-1-data
+          mountPath: /data/db
+        - name: mongo-config
+          mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: postdb-shrd-1-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mongo-config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Mi
+#------------------------------------------------------------------------------#
+#|                              PostDB-Shard 2                                |#
+#------------------------------------------------------------------------------#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postdb-shrd-2-service
+  labels:
+    app: postdb-shrd-2
+spec:
+  ports:
+  - port: 27018
+    targetPort: mongdb-port
+  selector:
+    app: postdb-shrd-2
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postdb-shrd-2
+  labels:
+    app: postdb-shrd-2
+spec:
+  serviceName: postdb-shrd-2-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postdb-shrd-2
+  template:
+    metadata:
+      labels:
+        app: postdb-shrd-2
+    spec:
+      containers:
+      - name: postdb-shrd-2
+        image: mongo
+        command: ["mongod", "--shardsvr", "--bind_ip", "0.0.0.0", "--replSet", "postShrd2RepSet"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--port", "27018", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 27018
+          name: mongodb-port
+        volumeMounts:
+        - name: postdb-shrd-1-data
+          mountPath: /data/db
+        - name: mongo-config
+          mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: postdb-shrd-1-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mongo-config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Mi
+---
+#------------------------------------------------------------------------------#
+#|                              PostDB Mongos                                 |#
+#------------------------------------------------------------------------------#
+apiVersion: v1
+kind: Service
+metadata:
+  name: postdb-mongos-service
+  labels:
+    app: postdb-mongos
+spec:
+  ports:
+  - port: 27017
+    targetPort: mongodb-port
+  selector:
+    app: postdb-mongos
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postdb-mongos
+  labels:
+    app: postdb-mongos
+spec:
+  serviceName: postdb-mongos-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postdb-mongos
+  template:
+    metadata:
+      labels:
+        app: postdb-mongos
+        startup: postdb-mongos-wait
+    spec:
+      containers:
+      - name: postdb-mongos
+        image: mongo
+        command: ["mongos", "--bind_ip", "0.0.0.0", "--configdb", "postManRepSet/postdb-manager-0.postdb-manager-service:27019,postdb-manager-1.postdb-manager-service:27019,postdb-manager-2.postdb-manager-service:27019"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 27017
+          name: mongodb-port
+        volumeMounts:
+            - name: postdb-mongos-data
+              mountPath: /data/db
+      volumes:
+        - name: postdb-mongos-data

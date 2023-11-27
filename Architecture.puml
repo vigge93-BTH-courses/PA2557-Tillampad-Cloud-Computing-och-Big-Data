@@ -3,8 +3,8 @@ skinparam sequenceArrowThickness 2
 frame databases {
     database "CommunityDB"
     database "PostDB0"
-    database "PostDB1" #PaleVioletRed
-    database "PostDBN" #PaleVioletRed
+    database "PostDB1"
+    database "PostDBN"
 }
 
 PostDBN ~ PostDB1
@@ -20,8 +20,8 @@ DatabaseService --> databases: MongoDB\nWire Protocol
 
 WebServer --> DatabaseService: HTTP REST API
 CommunityWorker --> CommunityDB: MongoDB\nWire Protocol
-LemmyFetcher -[dashed]-> PostDBN
-LemmyFetcher -[dashed]-> PostDB1
+LemmyFetcher --> PostDBN
+LemmyFetcher --> PostDB1
 LemmyFetcher --> PostDB0: MongoDB\nWire Protocol
 LemmyFetcher --> CommunityDB: MongoDB\nWire Protocol
 
