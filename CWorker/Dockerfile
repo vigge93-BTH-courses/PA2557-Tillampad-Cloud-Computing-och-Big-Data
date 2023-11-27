@@ -1,5 +1,7 @@
 FROM python:alpine
 
+RUN apk upgrade --no-cache
+
 COPY requirements.txt /app/requirements.txt
 
 RUN set -ex \

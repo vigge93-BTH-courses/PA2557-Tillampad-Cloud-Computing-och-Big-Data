@@ -1,5 +1,7 @@
 FROM python:alpine
 
+RUN apk upgrade --no-cache
+
 COPY requirements.txt /app/requirements.txt
 
 # https://www.digitalocean.com/community/tutorials/how-to-build-a-django-and-gunicorn-application-with-docker#adding-instructions-to-set-up-the-application
