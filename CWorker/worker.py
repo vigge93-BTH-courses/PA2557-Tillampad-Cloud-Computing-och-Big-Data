@@ -2,6 +2,7 @@ import datetime as dt
 import functools
 import logging
 import os
+import random
 import sys
 from dataclasses import dataclass
 from threading import Event
@@ -134,6 +135,9 @@ def worker():
 
     collection = db[config["DATABASE_COLLECTION"]]
 
+    # Sleep for a random amount of time to offset replicated workers.
+    event.wait(random.randint(1, 10))
+    
     logger.info("Worker setup finished, starting worker...")
     failures = 0
     while not killer.kill_now:
