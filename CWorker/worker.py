@@ -135,6 +135,7 @@ def worker():
     collection = db[config["DATABASE_COLLECTION"]]
 
     logger.info("Worker setup finished, starting worker...")
+    failures = 0
     while not killer.kill_now:
         try:
             objectsToUpdate = list(
@@ -171,8 +172,12 @@ def worker():
                 )
                 backoff.sleep()
                 backoff.increase()
+            failures = 0
         except Exception as ex:
             logger.error(f"Error: {ex}")
+            failures += 1
+            if failures >= 3:
+                exit(1)
             logger.info(f"Sleeping for {backoff.maxTime} seconds...")
             backoff.sleep(backoff.maxTime)
     queue_connection.close()
