@@ -1,0 +1,74 @@
+#------------------------------------------------------------------------------#
+#|                              PostDB-Shard template                         |#
+#------------------------------------------------------------------------------#
+apiVersion: v1
+kind: Service
+metadata:
+  name: postdb-shrd-<num>-service
+  labels:
+    app: postdb-shrd-<num>
+spec:
+  ports:
+  - port: 27018
+    targetPort: mongdb-port
+  selector:
+    app: postdb-shrd-<num>
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postdb-shrd-<num>
+  labels:
+    app: postdb-shrd-<num>
+spec:
+  serviceName: postdb-shrd-<num>-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postdb-shrd-<num>
+  template:
+    metadata:
+      labels:
+        app: postdb-shrd-<num>
+    spec:
+      containers:
+      - name: postdb-shrd-<num>
+        image: mongo
+        command: ["mongod", "--shardsvr", "--bind_ip", "0.0.0.0", "--replSet", "postShrd<num>RepSet"]
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--port", "27018", "--quiet", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 20
+          periodSeconds: 60
+          timeoutSeconds: 10
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 128Mi
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
+        ports:
+        - containerPort: 27018
+          name: mongodb-port
+        volumeMounts:
+        - name: postdb-shrd-<num>-data
+          mountPath: /data/db
+        - name: mongo-config
+          mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: postdb-shrd-<num>-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Mi
+    - metadata:
+        name: mongo-config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Mi
+---
