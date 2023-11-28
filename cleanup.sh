@@ -1,5 +1,5 @@
 kubectl delete --cascade='foreground' -f assignment1.yml -l app=cworker --grace-period=30
-kubectl delete --cascade='foreground' -f assignment1.yml -l app=cfetcher--grace-period=30
+kubectl delete --cascade='foreground' -f assignment1.yml -l app=cfetcher --grace-period=30
 kubectl delete --cascade='foreground' -f assignment1.yml --grace-period=30
 for file in tmp
 do

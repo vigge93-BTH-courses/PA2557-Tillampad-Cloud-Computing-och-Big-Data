@@ -1,0 +1,43 @@
+@startuml Architecture
+skinparam sequenceArrowThickness 2
+
+database "CommunityDB"
+
+frame PostDB {
+    component Mongos
+    database PostDBMan as "PostDB-Manager"
+    database PostDB1 as "PostDB-Shrd-1"
+    database PostDB2 as "PostDB-Shrd-2"
+    database PostDBN as "PostDB-Shrd-N"
+}
+actor User
+component WebServer as "Web server"
+component LemmyFetcher as "Fetcher"
+component CommunityWorker as "Worker"
+queue Messageq as "Message queue"
+component DatabaseService as "Database service"
+boundary Lemmy
+
+PostDBN ~ PostDB2 
+PostDB2 -[hidden]> PostDB1
+Mongos -> PostDBMan
+Mongos --> PostDB1
+Mongos --> PostDB2
+Mongos --> PostDBN
+
+
+User --> WebServer
+
+DatabaseService --> CommunityDB: MongoDB\nWire Protocol
+DatabaseService --> Mongos: MongoDB\nWire Protocol
+
+WebServer --> DatabaseService: HTTP REST API
+CommunityWorker --> CommunityDB: MongoDB\nWire Protocol
+LemmyFetcher --> Mongos: MongoDB\nWire Protocol
+LemmyFetcher --> CommunityDB: MongoDB\nWire Protocol
+
+CommunityWorker -up-> Messageq: AMQP
+Messageq --> LemmyFetcher: AMQP
+
+LemmyFetcher -up-> Lemmy: HTTP REST API
+@enduml
