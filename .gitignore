@@ -2,9 +2,3 @@
 venv/
 
 *.pyc
-
-temp/
-temp.json
-tmp/
-
-out/
