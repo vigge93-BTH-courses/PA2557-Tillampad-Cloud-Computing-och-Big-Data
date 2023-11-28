@@ -10,6 +10,7 @@ namespace CDatabaseService
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
+        [BsonIgnoreIfDefault]
         public string? Id{ get; set; }
         [BsonElement("community_id")]
         public long? CommunityId { get; set; }
