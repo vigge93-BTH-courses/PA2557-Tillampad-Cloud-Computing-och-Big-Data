@@ -31,10 +31,10 @@ The idea for this application is that the user adds a community that they want t
 
 ## Architecture
 ### Overview
-![image](report-assets/Architecture.png)
+![image](./report-assets/Architecture.png)
 
 ### Database 
-![image](report-assets/DB_Design.png)
+![image](./report-assets/DB_Design.png)
 These are the fields used by the database service. Other fields may exist on each object.
 
 ### General
