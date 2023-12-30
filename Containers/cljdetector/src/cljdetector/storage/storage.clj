@@ -2,13 +2,15 @@
   (:require [monger.core :as mg]
             [monger.collection :as mc]
             [monger.operators :refer :all]
-            [monger.conversion :refer [from-db-object]]))
-
+            ;; CHANGED: Added imports
+            [monger.conversion :refer [from-db-object]])
+  (:import org.bson.types.ObjectId))
 (def DEFAULT-DBHOST "localhost")
 (def dbname "cloneDetector")
 (def partition-size 100)
 (def hostname (or (System/getenv "DBHOST") DEFAULT-DBHOST))
-(def collnames ["files"  "chunks" "candidates" "clones"])
+;; CHANGED: Added statusUpdates
+(def collnames ["files"  "chunks" "candidates" "clones", "statusUpdates"])
 
 (defn print-statistics []
   (let [conn (mg/connect {:host hostname})        
@@ -34,7 +36,7 @@
         file-parted (partition-all partition-size files)]
     (try (doseq [file-group file-parted]
            (mc/insert-batch db collname (map (fn [%] {:fileName (.getPath %) :contents (slurp %)}) file-group)))
-         (catch Exception e []))))
+         (catch Exception e (println (.getMessage e)))))) ;; CHANGED: Print error message
 
 (defn store-chunks! [chunks]
   (let [conn (mg/connect {:host hostname})        
@@ -144,3 +146,11 @@
         collname "clones"
         anonymous-clone (select-keys clone [:numberOfInstances :instances])]
     (mc/insert db collname anonymous-clone)))
+
+;; CHANGED: Added function
+(defn add-update! [timestamp message]
+  (let [conn (mg/connect {:host hostname})        
+        db (mg/get-db conn dbname)
+        collname "statusUpdates"]
+      (mc/insert db collname {:timestamp timestamp :message message}))
+)

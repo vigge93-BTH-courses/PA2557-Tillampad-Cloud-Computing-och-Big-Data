@@ -28,7 +28,19 @@ services:
     volumes:
       - dbstorage:/data/db
       - dbconfig:/data/configdb
-    
+
+  monitortool:
+    image: monitortool
+    ports:
+      - 5000:5000
+    volumes:
+      - ./Containers/MonitorTool:/app
+    environment:
+      - DB_HOST=dbstorage
+      - DB_NAME=cloneDetector
+      - UPDATE_INTERVAL=10
+      - PYTHONUNBUFFERED=1
+  
 volumes:
   dbstorage:
   dbconfig:

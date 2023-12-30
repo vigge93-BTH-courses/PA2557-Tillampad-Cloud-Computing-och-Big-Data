@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    <a class="navbar-text btn btn-primary p-2" style="color: white;" href="{{ url_for('reset') }}">Reset stats</a>
+{% endblock %}
+{% block body %}
+    <h2>{% block title %}Stats{% endblock %}</h2>
+    Files processed: {{ current_stats['files'] }}<br>
+    Chunks processed: {{ current_stats['chunks'] }}<br>
+    Candidates processed: {{ current_stats['candidates'] }}<br>
+    Clones processed: {{ current_stats['clones'] }}<br>
+    <h2>Logs (UTC)</h2>
+    {% for log in logs %}
+    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}: {{ log.message|join(' ') }}<br>
+    {% endfor %}
+    <h2>Plots</h2>
+    <img src="{{ plot|safe }}"/>
+{% endblock %}

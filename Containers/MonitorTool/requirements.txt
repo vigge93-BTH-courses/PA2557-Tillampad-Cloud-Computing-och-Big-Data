@@ -1,0 +1,5 @@
+flask
+matplotlib
+pymongo
+requests
+pandas
