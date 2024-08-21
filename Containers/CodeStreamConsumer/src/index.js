@@ -17,6 +17,10 @@ const form = formidable({multiples:false});
 app.post('/', fileReceiver );
 function fileReceiver(req, res, next) {
     form.parse(req, (err, fields, files) => {
+        if (!files.data?.filepath) {
+            console.warn('Invalid file!') 
+            return;
+        }
         fs.readFile(files.data.filepath, { encoding: 'utf8' })
             .then( data => { return processFile(fields.name, data); });
     });
@@ -24,6 +28,8 @@ function fileReceiver(req, res, next) {
 }
 
 app.get('/', viewClones );
+
+app.get('/data', getDataView );
 
 const server = app.listen(PORT, () => { console.log('Listening for files on port', PORT); });
 
@@ -35,6 +41,19 @@ function getStatistics() {
     let fileStore = FileStorage.getInstance();
     let output = 'Processed ' + fileStore.numberOfFiles + ' files containing ' + cloneStore.numberOfClones + ' clones.'
     return output;
+}
+
+function getDataView(req, res, next) {
+    const fileStore = FileStorage.getInstance();
+    header = ['id','filename', 'length', 'tot_time', 'match_time']
+    const csv = [ header.join(',') ]
+    let i = 1
+    for (const file of fileStore.getAllFiles()) {        
+        const timers = Timer.getTimers(file)
+        csv.push([i, file.name, file.contents.length, timers.total, timers.match].join(','))
+        i++;
+    }
+    res.attachment('data.csv').send(csv.join('\r\n'))
 }
 
 function lastFileTimersHTML() {
@@ -83,6 +102,7 @@ function listProcessedFilesHTML() {
 function viewClones(req, res, next) {
     let page='<HTML><HEAD><TITLE>CodeStream Clone Detector</TITLE></HEAD>\n';
     page += '<BODY><H1>CodeStream Clone Detector</H1>\n';
+    page += '<a href="/data">Get all data</a>\n'
     page += '<P>' + getStatistics() + '</P>\n';
     page += lastFileTimersHTML() + '\n';
     page += listClonesHTML() + '\n';
@@ -143,10 +163,6 @@ function processFile(filename, contents) {
         .then( (file) => Timer.endTimer(file, 'total') )
         .then( PASS( (file) => lastFile = file ))
         .then( PASS( (file) => maybePrintStatistics(file, cd, cloneStore) ))
-    // TODO Store the timers from every file (or every 10th file), create a new landing page /timers
-    // and display more in depth statistics there. Examples include:
-    // average times per file, average times per last 100 files, last 1000 files.
-    // Perhaps throw in a graph over all files.
         .catch( console.log );
 };
 

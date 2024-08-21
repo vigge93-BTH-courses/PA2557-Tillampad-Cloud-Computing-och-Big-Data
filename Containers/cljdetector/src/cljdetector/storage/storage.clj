@@ -59,7 +59,8 @@
         db (mg/get-db conn dbname)
         collname "chunks"]
      (mc/aggregate db collname
-                   [{$group {:_id {:chunkHash "$chunkHash"}
+                   [{$sort {:chunkHash 1}} ;; CHANGED: Added sort step to utilize index
+                    {$group {:_id "$chunkHash"
                              :numberOfInstances {$count {}}
                              :instances {$push {:fileName "$fileName"
                                                 :startLine "$startLine"
@@ -147,10 +148,27 @@
         anonymous-clone (select-keys clone [:numberOfInstances :instances])]
     (mc/insert db collname anonymous-clone)))
 
-;; CHANGED: Added function
+;; CHANGED: Added function, adds message to statusUpdates collection
 (defn add-update! [timestamp message]
   (let [conn (mg/connect {:host hostname})        
         db (mg/get-db conn dbname)
         collname "statusUpdates"]
       (mc/insert db collname {:timestamp timestamp :message message}))
+)
+
+;; CHANGED: Added function, creates index on chunkHash for chunks collection
+(defn create-chunk-index! []
+  (let [conn (mg/connect {:host hostname})        
+        db (mg/get-db conn dbname)
+        collname "chunks"]
+      (mc/create-index db collname {:chunkHash 1}))
+)
+
+;; CHANGED: Added function, creates index on filename for candidates collection
+(defn create-candidates-index! []
+  (let [conn (mg/connect {:host hostname})        
+        db (mg/get-db conn dbname)
+        collname "candidates"]
+      (mc/create-index db collname {:instances.fileName 1})
+  )
 )

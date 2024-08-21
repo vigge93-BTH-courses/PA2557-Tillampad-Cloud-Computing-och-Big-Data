@@ -80,8 +80,7 @@ class CloneDetector {
     }
 
     #filterCloneCandidates(file, compareFile) {
-        // TODO
-        // For each chunk in file.chunks, find all #chunkMatch() in compareFile.chunks
+        // For each chunk in file.chunks, find all #chunkMatch() in compareFile.chunk
         // For each matching chunk, create a new Clone.
         // Store the resulting (flat) array in file.instances.
         // 
@@ -91,14 +90,17 @@ class CloneDetector {
         //
         // Return: file, including file.instances which is an array of Clone objects (or an empty array).
         //
-
-        file.instances = file.instances || [];        
+        const newInstances = file.chunks
+        .map(chunk => compareFile.chunks
+            .filter(other => this.#chunkMatch(chunk, other))
+            .map(other_match => new Clone(file.name, compareFile.name, chunk, other_match)))
+            .flat()
+        file.instances = file.instances || [];
         file.instances = file.instances.concat(newInstances);
-        return file;
+        return file;s
     }
      
     #expandCloneCandidates(file) {
-        // TODO
         // For each Clone in file.instances, try to expand it with every other Clone
         // (using Clone::maybeExpandWith(), which returns true if it could expand)
         // 
@@ -111,12 +113,17 @@ class CloneDetector {
         // Return: file, with file.instances only including Clones that have been expanded as much as they can,
         //         and not any of the Clones used during that expansion.
         //
+        file.instances = file.instances.reduce((prev, current) => {
+            if (!prev.some(clone => clone.maybeExpandWith(current))) {
+                prev.push(current)
+            }
+            return prev;
+        }, [])
 
-        return file;
+        return file;    
     }
     
     #consolidateClones(file) {
-        // TODO
         // For each clone, accumulate it into an array if it is new
         // If it isn't new, update the existing clone to include this one too
         // using Clone::addTarget()
@@ -128,7 +135,15 @@ class CloneDetector {
         //
         // Return: file, with file.instances containing unique Clone objects that may contain several targets
         //
-
+        file.instances = file.instances.reduce((prev, current) => {
+            const matched_clone = prev.find((clone) => clone.equals(current))
+            if (matched_clone) {
+                matched_clone.addTarget(current);
+            } else {
+                prev.push(current);
+            }
+            return prev;
+        }, [])   
         return file;
     }
     
@@ -157,8 +172,6 @@ class CloneDetector {
         let allFiles = this.#myFileStore.getAllFiles();
         file.instances = file.instances || [];
         for (let f of allFiles) {
-            // TODO implement these methods (or re-write the function matchDetect() to your own liking)
-            // 
             // Overall process:
             // 
             // 1. Find all equal chunks in file and f. Represent each matching pair as a Clone.

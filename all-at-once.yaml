@@ -13,8 +13,8 @@ services:
     environment:
       DBHOST: dbstorage
       SOURCEDIRtest: "/usr/src/app/test/data"
-      SOURCEDIReclipse: "/QualitasCorpus/QualitasCorpus-20130901r/Systems/eclipse_SDK"
-      SOURCEDIR: "/QualitasCorpus"
+      SOURCEDIR: "/QualitasCorpus/QualitasCorpus-20130901r/Systems/eclipse_SDK"
+      SOURCEDIRall: "/QualitasCorpus"
       CHUNKSIZE: 20
 
   dbstorage:
@@ -38,7 +38,7 @@ services:
     environment:
       - DB_HOST=dbstorage
       - DB_NAME=cloneDetector
-      - UPDATE_INTERVAL=10
+      - UPDATE_INTERVAL=2
       - PYTHONUNBUFFERED=1
   
 volumes:

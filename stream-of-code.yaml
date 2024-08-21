@@ -8,7 +8,7 @@ version: "3.8"
 services:
   cs-generator:
     image: csgenerator
-    command: "TEST"
+    # command: "TEST"
     volumes:
       - qc-volume:/QualitasCorpus
     environment:
@@ -18,6 +18,8 @@ services:
     image: csconsumer
     volumes:
       - ./Containers/CodeStreamConsumer/src:/app/src
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=8192"
     ports:
       - 8080:3000
 volumes:

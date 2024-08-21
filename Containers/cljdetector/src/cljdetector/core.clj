@@ -33,9 +33,15 @@
 
 (defn maybe-detect-clones [args]
   (when-not (some #{"NOCLONEID"} (map string/upper-case args))
+    ;; CHANGED: Added call to create-chunk-index
+    (ts-println "Creating Chunk Index...")
+    (storage/create-chunk-index!)
     (ts-println "Identifying Clone Candidates...")
     (storage/identify-candidates!)
     (ts-println "Found" (storage/count-items "candidates") "candidates")
+    ;; CHANGED: Added call to create-candidates-index
+    (ts-println "Creating Candidates Index...")
+    (storage/create-candidates-index!)
     (ts-println "Expanding Candidates...")
     (expander/expand-clones)))
 
@@ -50,8 +56,6 @@
   (when (some #{"LIST"} (map string/upper-case args))
     (ts-println "Consolidating and listing clones...")
     (pretty-print (storage/consolidate-clones-and-source))))
-
-
 
 (defn -main
   "Starting Point for All-At-Once Clone Detection

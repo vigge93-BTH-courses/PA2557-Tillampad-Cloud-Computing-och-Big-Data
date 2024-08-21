@@ -118,5 +118,5 @@ def get_database(connection_string: str, database_name: str):
 
 
 if __name__ == "__main__":
-    threading.Timer(UPDATE_INTERVAL, worker).start()
+    threading.Timer(3, worker).start() # Allow time for MongoDB to start
     app.run(host="0.0.0.0", port=PORT)
